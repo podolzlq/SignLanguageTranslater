@@ -28,13 +28,16 @@ const Translator = () => {
   // ✅ 1. API 서버 연결 확인 함수
   const checkAPIServer = useCallback(async () => {
     try {
+      console.log('API 서버 연결 시도 중...');
       const response = await fetch('http://localhost:5000/api/health');
+      console.log('API 응답 상태:', response.status);
       const data = await response.json();
+      console.log('API 응답 데이터:', data);
       if (data.status === 'healthy') {
         console.log('API 서버 연결 성공!');
         return true;
       } else {
-        console.error('API 서버 상태 이상');
+        console.error('API 서버 상태 이상:', data);
         return false;
       }
     } catch (error) {
@@ -99,15 +102,23 @@ const Translator = () => {
   // ✅ 4. 웹캠이 켜지면 API 서버 연결 확인
   useEffect(() => {
     if (isWebcamOn) {
+      console.log('웹캠 켜짐 - API 서버 연결 확인 시작');
       setIsModelLoading(true);
       checkAPIServer().then((isConnected) => {
+        console.log('API 서버 연결 결과:', isConnected);
         if (isConnected) {
           // API 서버 연결 성공 시 실시간 인식 시작
           intervalRef.current = setInterval(processRecognition, 1000); // 1초마다 인식
+          console.log('실시간 인식 시작됨');
         }
+        console.log('모델 로딩 상태 해제');
+        setIsModelLoading(false);
+      }).catch((error) => {
+        console.error('API 서버 연결 오류:', error);
         setIsModelLoading(false);
       });
     } else {
+      console.log('웹캠 꺼짐 - 인터벌 정리');
       // 웹캠이 꺼지면 인터벌 정리
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
