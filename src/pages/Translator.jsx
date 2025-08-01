@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Webcam from 'react-webcam'; // ✅ react-webcam 임포트
-import { Hands } from '@mediapipe/hands'; // ✅ MediaPipe 임포트
 import Header from '../components/Header/Header';
 import { IoClose } from 'react-icons/io5';
 import './Translator.css';
@@ -12,8 +11,8 @@ const Translator = () => {
   const [translatedSentences, setTranslatedSentences] = useState([]);
   
   const webcamRef = useRef(null);
-  const handsRef = useRef(null);
   const sentenceBuffer = useRef([]); // 단어들을 임시 저장할 버퍼
+  const intervalRef = useRef(null); // 인터벌 참조
   
   useEffect(() => {
     // Translator 페이지가 마운트될 때 body 배경을 그라데이션으로 설정
@@ -26,24 +25,26 @@ const Translator = () => {
     };
   }, []); // []를 비워두면 컴포넌트가 처음 마운트될 때 딱 한 번만 실행됩니다.
 
-  // ✅ 1. MediaPipe Hands 모델 초기화 함수
-  const initializeMediaPipe = useCallback(() => {
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-    });
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
-    // 결과 콜백 함수
-    hands.onResults(onResults);
-    handsRef.current = hands;
+  // ✅ 1. API 서버 연결 확인 함수
+  const checkAPIServer = useCallback(async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/health');
+      const data = await response.json();
+      if (data.status === 'healthy') {
+        console.log('API 서버 연결 성공!');
+        return true;
+      } else {
+        console.error('API 서버 상태 이상');
+        return false;
+      }
+    } catch (error) {
+      console.error('API 서버 연결 실패:', error);
+      return false;
+    }
   }, []);
 
   // ✅ 2. API 서버를 통한 수어 인식 함수
-  const predictSign = async (landmarks) => {
+  const predictSign = async () => {
     try {
       // 웹캠 이미지를 Base64로 변환
       const canvas = document.createElement('canvas');
@@ -71,67 +72,59 @@ const Translator = () => {
     }
   };
 
-  // ✅ 3. MediaPipe가 결과를 반환할 때마다 호출되는 콜백
-  const onResults = useCallback(async (results) => {
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      const landmarks = results.multiHandLandmarks[0];
-      const predictedWord = await predictSign(landmarks);
-      
-      // 예측된 단어가 이전과 다를 때만 상태 업데이트
-      if (predictedWord !== currentWord && predictedWord !== '인식 실패' && predictedWord !== '연결 오류') {
-        setCurrentWord(predictedWord);
-        sentenceBuffer.current.push(predictedWord);
-
-        // 단어가 3개 모이면 문장으로 만들어 로그에 추가
-        if (sentenceBuffer.current.length >= 3) {
-          const newSentence = {
-            id: Date.now(),
-            title: `문장 ${translatedSentences.length + 1}`,
-            text: sentenceBuffer.current.join(' '),
-          };
-          setTranslatedSentences(prev => [newSentence, ...prev.slice(0, 9)]); // 최대 10개 문장 유지
-          sentenceBuffer.current = [];
-        }
-      }
-    }
-  }, [currentWord, translatedSentences.length]);
-
-  // ✅ 4. 웹캠이 켜지면 MediaPipe와 AI 모델을 로드하는 로직
-  useEffect(() => {
-    initializeMediaPipe();
+  // ✅ 3. 실시간 인식 처리 함수
+  const processRecognition = useCallback(async () => {
+    if (!isWebcamOn || isModelLoading) return;
     
-    // API 서버 연결 확인
-    const checkAPIServer = async () => {
-      setIsModelLoading(true);
-      try {
-        const response = await fetch('http://localhost:5000/api/health');
-        const data = await response.json();
-        if (data.status === 'healthy') {
-          console.log('API 서버 연결 성공!');
-        } else {
-          console.error('API 서버 상태 이상');
-        }
-      } catch (error) {
-        console.error('API 서버 연결 실패:', error);
-      }
-      setIsModelLoading(false);
-    };
+    const predictedWord = await predictSign();
+    
+    // 예측된 단어가 이전과 다를 때만 상태 업데이트
+    if (predictedWord !== currentWord && predictedWord !== '인식 실패' && predictedWord !== '연결 오류' && predictedWord !== '카메라 없음') {
+      setCurrentWord(predictedWord);
+      sentenceBuffer.current.push(predictedWord);
 
-    if (isWebcamOn) {
-      checkAPIServer();
+      // 단어가 3개 모이면 문장으로 만들어 로그에 추가
+      if (sentenceBuffer.current.length >= 3) {
+        const newSentence = {
+          id: Date.now(),
+          title: `문장 ${translatedSentences.length + 1}`,
+          text: sentenceBuffer.current.join(' '),
+        };
+        setTranslatedSentences(prev => [newSentence, ...prev.slice(0, 9)]); // 최대 10개 문장 유지
+        sentenceBuffer.current = [];
+      }
     }
-  }, [isWebcamOn, initializeMediaPipe]);
+  }, [currentWord, translatedSentences.length, isWebcamOn, isModelLoading]);
 
-  // ✅ 5. 실시간 비디오 프레임을 MediaPipe로 보내는 루프
+  // ✅ 4. 웹캠이 켜지면 API 서버 연결 확인
   useEffect(() => {
-    const processVideo = async () => {
-      if (isWebcamOn && webcamRef.current?.video && !isModelLoading) {
-        await handsRef.current?.send({ image: webcamRef.current.video });
+    if (isWebcamOn) {
+      setIsModelLoading(true);
+      checkAPIServer().then((isConnected) => {
+        if (isConnected) {
+          // API 서버 연결 성공 시 실시간 인식 시작
+          intervalRef.current = setInterval(processRecognition, 1000); // 1초마다 인식
+        }
+        setIsModelLoading(false);
+      });
+    } else {
+      // 웹캠이 꺼지면 인터벌 정리
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-      requestAnimationFrame(processVideo);
+    }
+
+    // 컴포넌트 언마운트 시 정리
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-    processVideo();
-  }, [isWebcamOn, isModelLoading]);
+  }, [isWebcamOn, checkAPIServer, processRecognition]);
+
+  // ✅ 5. MediaPipe 제거 - API 서버만 사용
 
   return (
     <div className="translator-container">
