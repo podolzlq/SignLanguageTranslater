@@ -1,0 +1,223 @@
+/* ============================================= */
+/* 1. 기본 스타일 (Mobile-First: ~768px)        */
+/* ============================================= */
+.steps-section {
+  background: linear-gradient(180deg, #FFBCB7 0%, #DDA9D9 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 100px 1rem 3rem 1rem;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+}
+
+.steps-title-block {
+  text-align: center;
+  margin-bottom: 3rem; 
+}
+
+.steps-title-block h2 {
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+  font-size: 32px;
+  color: #000000;
+  margin-bottom: 1rem;
+}
+
+.steps-title-block p {
+  font-family: 'Pretendard', sans-serif;
+  font-size: 1rem;
+  color: #7B8690;
+}
+
+.steps-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  margin-bottom: 3rem;
+}
+
+.step-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 350px;
+}
+
+.step-visuals {
+  position: relative;
+  margin-bottom: 1rem; 
+}
+
+.step-number-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+.step-number {
+  width: 27px;
+  height: 27px;
+  background-color: #FAD5D9;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #000000;
+}
+
+.step-icon-wrapper {
+  width: 180px;
+  height: 180px;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 3.5rem;
+  color: #000000;
+}
+
+.step-text h3 {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: 0.75rem;
+}
+
+.step-text p {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #333;
+  line-height: 1.5;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.arrow {
+  width: 0; 
+  height: 0; 
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 20px solid #000000;
+}
+
+.testimonials {
+  width: 100%;
+}
+
+.testimonials h2 {
+  color: #000000;
+  font-size: 2rem;
+  font-family: 'Pretendard', sans-serif;
+  font-weight: 600;
+}
+.testimonial-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+.testimonial-item {
+  background-color: rgba(255, 255, 255, 0.7);
+  padding: 2rem;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 350px;
+  box-sizing: border-box;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial-item p{
+  font-size: 0.775rem;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+}
+.author {
+  display: flex;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+.author img {
+  border-radius: 50%;
+  margin-right: 1rem;
+}
+
+/* ======================================================== */
+/* 2. 데스크톱 스타일 (min-width: 769px 이상 화면에 적용) */
+/* ======================================================== */
+@media (min-width: 769px) {
+  .steps-section {
+    padding: 140px 2rem 5rem 2rem;
+  }
+  
+  .steps-title-block {
+    margin-bottom: 4rem; 
+  }
+
+  .steps-title-block h2 {
+    font-size: 40px;
+  }
+  
+  .steps-grid {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+    max-width: 1100px;
+    margin-bottom: 5rem;
+  }
+
+  .step-column {
+    flex: 1;
+  }
+
+  .step-icon-wrapper {
+    width: 190px;
+    height: 190px;
+    font-size: 4rem;
+  }
+
+  .step-text h3 {
+    font-size: 24px;
+    font-weight: 400;
+  }
+
+  .step-text p {
+    font-size: 16px;
+    max-width: 250px;
+  }
+
+  .arrow {
+    margin-top: 85px;
+    border-top: 15px solid transparent;
+    border-bottom: 15px solid transparent;
+    border-left: 20px solid #000000;
+    border-right: none;
+  }
+
+  .testimonial-grid {
+    flex-direction: row;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .testimonial-item p{
+  font-size: 0.775rem;
+
+}
+}

@@ -1,0 +1,151 @@
+/* ============================================= */
+/* 1. 기본 스타일 (Mobile-First: ~768px)        */
+/* ============================================= */
+.hero-section {
+  background-color: #FFFDE7;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 120px 1rem 5rem 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.hero-logo {
+  position: absolute;
+  top: 20px;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  z-index: 1001;
+}
+
+.logo-text-gugi {
+  font-family: 'Gugi', cursive;
+  font-size: 24px;
+  background: linear-gradient(180deg, #FFB9B3 0%, #DCA5D7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin-right: 8px;
+}
+
+.logo-icon-gugi {
+  width: 24px;
+  height: 24px;
+}
+
+.hero-content {
+  width: 100%;
+  padding: 0;
+  box-sizing: border-box;
+  z-index: 2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.headline-container {
+  width: 100%;
+  margin-bottom: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.headline-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0.8;
+}
+
+.headline-line-2 {
+    padding-left: calc(2em);
+}
+
+.headline-icon {
+  width: 80px;
+  height: 80px;
+  margin-right: 1rem;
+}
+
+.text-dongle {
+  font-family: 'Dongle', cursive;
+  font-size: 3rem;
+  font-weight: 400;
+  color: #000000;
+}
+
+.gradient-highlight {
+  background: linear-gradient(180deg, #FFB9B3 0%, #DCA5D7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  font-family: 'Gugi', cursive;
+  font-size: 3.5rem;
+}
+
+.button-group {
+  flex-direction: column;
+}
+
+
+/* ======================================================== */
+/* 2. 데스크톱 스타일 (min-width: 769px 이상 화면에 적용) */
+/* ======================================================== */
+@media (min-width: 769px) {
+  .hero-section {
+    padding: 0 2rem;
+  }
+
+  .hero-logo {
+    top: 20px;
+    left: 23px;
+  }
+
+  .logo-text-gugi {
+    font-size: 30px;
+  }
+
+  .logo-icon-gugi {
+    width: 30px;
+    height: 30px;
+  }
+
+  .headline-container {
+    max-width: fit-content;
+    align-items: flex-start;
+    margin-bottom: 4rem;
+  }
+
+  .headline-icon {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .headline-line-2 {
+    padding-left: calc(120px + 15em);
+  }
+
+  .text-dongle {
+    font-size: 7rem;
+  }
+
+  .gradient-highlight {
+    font-size: 6rem;
+  }
+  .button-group {
+  flex-direction: row;
+  width: auto;
+  margin-top: 2rem;
+
+  }
+}

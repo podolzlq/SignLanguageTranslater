@@ -1,0 +1,87 @@
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: auto;
+  backdrop-filter: blur(49.20000076293945px);
+  background: #FFFFFFAD;
+  box-sizing: border-box;
+}
+.nav-container {
+  display: flex;
+  align-items: center;
+  border-radius: 1em;
+  padding: 0.1em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  gap: 1rem; 
+  position: relative;
+}
+
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nav-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  color: #000000;
+  text-decoration: none;
+  border-radius: 25px;
+  transition: background-color 0.2s ease-in-out, color 0.2s;
+}
+
+.nav-item.active {
+  background-color: #FFFFFF;
+  color: #333;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+/* ======================================================= */
+/* 2. 미디어 쿼리 (Mobile - 768px 이하 화면에만 적용)   */
+/* ======================================================= */
+@media (max-width: 768px) {
+  
+  .app-header {
+    padding: 0.5rem 1rem;
+    background: #FFFDE7;
+    backdrop-filter: blur(49.20000076293945px)
+
+  }
+  
+  .main-nav {
+    background-color: #ECEAEA;
+    border-radius: 10px;
+    padding: 0.1em;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    gap: 0.5rem;
+  }
+
+  .nav-item {
+    padding: 0.1rem 0.1rem;
+    font-size: 0.5em;
+  }
+  
+  .nav-item.active {
+    background-color: transparent;
+    box-shadow: none;
+    font-weight: 700;
+  }
+  
+  .nav-item:hover {
+    background-color: #FFFFFF;
+  }
+}

@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Gugi&family=Inter:wght@400;700&family=Dongle:wght@400;700&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url('https://fonts.googleapis.com/css2?family=Itim&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #FFF9C4;
+  color: #333;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+body::-webkit-scrollbar {
+  display: none; 
+}
+
+.App {
+  text-align: center;
+}
+
+.button-group {
+  margin-top: 2rem;
+  display: flex;
+  gap: 2rem;
+}
+
+/* 모바일 기본 버튼 스타일 */
+.button-group .btn-primary {
+  background-color: #FFC0CB;
+  color: #333;
+  border: none;
+  padding: 1rem 1.5rem; /* 모바일용 작은 패딩 */
+  border-radius: 20px;
+  font-size: 0.9rem; /* 모바일용 작은 폰트 */
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  transition: transform 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.button-group .btn-primary:hover {
+  transform: translateY(-2px);
+}
+
+.button-group .btn-secondary {
+  background-color: #FFC0CB;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 1rem 1.5rem; /* 모바일용 작은 패딩 */
+  border-radius: 20px;
+  font-size: 0.9rem; /* 모바일용 작은 폰트 */
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0px 4px 4px 0px #00000040;
+  transition: transform 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.button-group .btn-secondary:hover {
+  transform: translateY(-2px);
+}
+
+/* 데스크톱용 버튼 스타일 (769px 이상) */
+@media (min-width: 769px) {
+  .button-group .btn-primary {
+    padding: 2rem 3rem; /* 데스크톱용 큰 패딩 */
+    font-size: 1rem; /* 데스크톱용 폰트 크기 */
+  }
+
+  .button-group .btn-secondary {
+    padding: 2rem 3rem; /* 데스크톱용 큰 패딩 */
+    font-size: 1rem; /* 데스크톱용 폰트 크기 */
+  }
+}

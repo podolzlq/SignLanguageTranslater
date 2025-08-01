@@ -1,0 +1,180 @@
+/* Translator 페이지 전용 스타일 (토글 스위치 수정 최종 버전) */
+
+.translator-container {
+  box-sizing: border-box;
+  padding-top: 80px;
+}
+.content-wrapper { 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 1.5rem 2rem; 
+}
+.page-title { 
+    font-family: 'Pretendard', sans-serif; 
+    font-size: 2rem; 
+    font-weight: 700; 
+    text-align: left; 
+    margin-bottom: 1.5rem; 
+    color: #FFFFFF; 
+}
+.grid-container { 
+    display: grid; 
+    grid-template-columns: 2fr 1.5fr; 
+    grid-template-rows: auto auto; 
+    gap: 1.5rem; 
+}
+.grid-item { 
+    background: rgba(255, 255, 255, 0.7); 
+    border-radius: 20px; 
+    padding: 1.5rem; 
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1); 
+    display: flex; 
+    flex-direction: column; 
+}
+.grid-item h3 { 
+    font-family: 'Pretendard', sans-serif; 
+    text-align: left; 
+    margin-top: 0; 
+    margin-bottom: 1rem; 
+    color: #333; 
+    font-weight: 600; 
+}
+.webcam-card .card-header { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+.webcam-card .camera-toggle { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    font-size: 0.9rem; 
+}
+.webcam-body {
+  flex-grow: 1;
+  background-color: #000000;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  position: relative;
+}
+.hidden-webcam {
+  display: none;
+}
+.webcam-canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* ✅ 거울 모드가 적용되도록 transform 속성을 수정합니다. */
+  transform: scaleX(-1);
+}
+.webcam-placeholder { 
+    cursor: pointer; 
+    width: 100%; 
+    height: 100%; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    transition: background-color 0.2s; 
+    font-family: 'Pretendard', sans-serif; 
+    color: #555; 
+    background-color: #e9ecef;
+}
+.webcam-placeholder:hover { background-color: #dcdfe2; }
+
+.loading-overlay { 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    background-color: rgba(0,0,0,0.5); 
+    color: white; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    font-family: 'Pretendard', sans-serif; 
+    font-size: 1.2rem; 
+}
+.translated-card { min-height: 300px; max-height: 500px; }
+.translated-list { flex-grow: 1; display: flex; flex-direction: column; gap: 1rem; overflow-y: auto; padding-right: 8px; }
+.translated-list::-webkit-scrollbar { width: 8px; }
+.translated-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 4px; }
+.translated-list::-webkit-scrollbar-thumb { background: #bbb; border-radius: 4px; }
+.translated-list::-webkit-scrollbar-thumb:hover { background: #999; }
+.translated-item { background-color: #FFFFFF; border-radius: 10px; padding: 1rem; flex-shrink: 0; }
+.translated-item .item-header { display: flex; justify-content: space-between; align-items: center; color: #888; font-size: 0.9rem; }
+.translated-item p { margin: 0.5rem 0 0 0; font-size: 1.2rem; font-weight: 600; color: #333; }
+.close-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; color: #aaa; }
+
+.recognized-card { 
+    min-height: 200px; 
+    justify-content: center; 
+    align-items: center; 
+    text-align: center; 
+}
+.recognized-content h2 { 
+    font-family: 'Dongle', sans-serif; 
+    font-size: 5rem; 
+    margin: 0; 
+    line-height: 1; 
+    color: #333; 
+}
+.recognized-content p { 
+    margin: 0; 
+    color: #666; 
+    font-size: 1rem; 
+}
+.recognized-content .success-word {
+  color: #28a745;
+}
+.recognized-content .guess-word {
+  color: #ffc107;
+  font-size: 4rem;
+}
+.tips-card ul { 
+    padding-left: 1.5rem; 
+    margin: 0; 
+    text-align: left; 
+    color: #555; 
+    font-size: 0.9rem; 
+    line-height: 1.6; 
+}
+.tips-card li { margin-bottom: 0.75rem; }
+
+/* ✅✅✅ 누락되었던 카메라 토글 스위치 스타일을 여기에 추가합니다. ✅✅✅ */
+.camera-toggle input[type="checkbox"] {
+  margin-left: 8px;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 40px;
+  height: 20px;
+  background-color: #ddd;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.3s;
+}
+
+.camera-toggle input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: white;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.3s;
+}
+
+.camera-toggle input[type="checkbox"]:checked {
+  background-color: #f48fb1; /* 활성화 시 분홍색 */
+}
+
+.camera-toggle input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+}
