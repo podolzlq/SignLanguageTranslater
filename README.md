@@ -1,12 +1,12 @@
-# 수화 인식 모델 API 서버
+# 수화 인식 시스템
 
-한국어 수화 인식을 위한 TensorFlow Lite 모델과 Flask API 서버입니다.
+한국어 수화 인식을 위한 React 프론트엔드와 Flask API 서버입니다.
 
 ## 🚀 주요 기능
 
 - 실시간 수화 인식 (웹캠 기반)
+- React 프론트엔드 UI
 - Flask REST API 서버
-- React 프론트엔드 연동 지원
 - MediaPipe Holistic을 이용한 손 랜드마크 추출
 - TensorFlow Lite 모델을 이용한 실시간 추론
 
@@ -14,6 +14,12 @@
 
 ```
 sign_language_model/
+├── src/                       # React 프론트엔드
+│   ├── pages/
+│   │   ├── Splash.jsx         # 스플래시 페이지
+│   │   ├── Home.jsx           # 홈 페이지
+│   │   └── Translator.jsx     # 수화 인식 페이지
+│   └── components/            # React 컴포넌트들
 ├── api_server.py              # Flask API 서버
 ├── webcam_word_sign_recognition.py  # 웹캠 인식 스크립트
 ├── react_example.js           # React 컴포넌트 예시
@@ -34,8 +40,11 @@ sign_language_model/
 venv_py310\Scripts\activate  # Windows
 source venv_py310/bin/activate  # Linux/Mac
 
-# 필요한 패키지 설치
+# Python 패키지 설치
 pip install flask flask-cors tensorflow opencv-python mediapipe numpy
+
+# React 패키지 설치
+npm install
 ```
 
 ### 2. API 서버 실행
@@ -44,7 +53,13 @@ python api_server.py
 ```
 서버가 `http://localhost:5000`에서 실행됩니다.
 
-### 3. 웹캠 인식 실행
+### 3. React 앱 실행
+```bash
+npm start
+```
+React 앱이 `http://localhost:3000`에서 실행됩니다.
+
+### 4. 웹캠 인식 실행 (독립 실행)
 ```bash
 python webcam_word_sign_recognition.py
 ```
@@ -78,21 +93,19 @@ GET /api/model-info
 
 ## 📱 React 연동
 
-`react_example.js` 파일을 참고하여 React 앱에서 API를 호출할 수 있습니다.
+`src/pages/Translator.jsx`에서 API 서버와 연동하여 실시간 수화 인식을 수행합니다.
 
-### 사용 예시:
-```javascript
-import SignLanguageRecognition from './components/SignLanguageRecognition';
-
-// 컴포넌트 사용
-<SignLanguageRecognition />
-```
+### 주요 기능:
+- 웹캠 실시간 스트리밍
+- MediaPipe 손 랜드마크 추출
+- API 서버를 통한 수화 인식
+- 인식 결과 실시간 표시
 
 ## 🔧 기술 스택
 
+- **Frontend**: React, React Router, React Webcam
 - **Backend**: Flask, TensorFlow Lite
 - **Computer Vision**: MediaPipe Holistic, OpenCV
-- **Frontend**: React (예시 제공)
 - **Data Processing**: NumPy, Pandas
 
 ## 📝 라이센스
@@ -101,5 +114,5 @@ import SignLanguageRecognition from './components/SignLanguageRecognition';
 
 ## 👥 팀원
 
+- React 프론트엔드 개발
 - AI 모델 개발 및 API 서버 구현
-- React 프론트엔드 연동 지원 

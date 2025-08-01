@@ -1,0 +1,10 @@
+.final-cta-section {
+  background: linear-gradient(180deg, #DDA9D9 0%, #FFBCB7 100%);
+  
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5rem 2rem;
+  box-sizing: border-box;
+}
