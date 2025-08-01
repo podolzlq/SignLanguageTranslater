@@ -52,13 +52,18 @@ const Translator = () => {
       // 웹캠 이미지를 Base64로 변환
       const canvas = document.createElement('canvas');
       const video = webcamRef.current?.video;
-      if (!video) return '카메라 없음';
+      if (!video) {
+        console.log('카메라 비디오 없음');
+        return '카메라 없음';
+      }
       
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0);
       const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+      
+      console.log('이미지 캡처 완료, API 요청 시작');
       
       // API 서버에 요청
       const response = await fetch('http://localhost:5000/api/predict', {
@@ -68,55 +73,73 @@ const Translator = () => {
       });
       
       const data = await response.json();
-      return data.success ? data.prediction : '인식 실패';
+      console.log('API 응답:', data);
+      
+      if (data.success) {
+        console.log('인식 성공:', data.prediction, '신뢰도:', data.confidence);
+        return data.prediction;
+      } else {
+        console.log('인식 실패:', data.message);
+        return '인식 실패';
+      }
     } catch (error) {
       console.error('API 호출 오류:', error);
       return '연결 오류';
     }
   };
 
-  // ✅ 3. 실시간 인식 처리 함수
-  const processRecognition = useCallback(async () => {
-    if (!isWebcamOn || isModelLoading) return;
-    
-    const predictedWord = await predictSign();
-    
-    // 예측된 단어가 이전과 다를 때만 상태 업데이트
-    if (predictedWord !== currentWord && predictedWord !== '인식 실패' && predictedWord !== '연결 오류' && predictedWord !== '카메라 없음') {
-      setCurrentWord(predictedWord);
-      sentenceBuffer.current.push(predictedWord);
 
-      // 단어가 3개 모이면 문장으로 만들어 로그에 추가
-      if (sentenceBuffer.current.length >= 3) {
-        const newSentence = {
-          id: Date.now(),
-          title: `문장 ${translatedSentences.length + 1}`,
-          text: sentenceBuffer.current.join(' '),
-        };
-        setTranslatedSentences(prev => [newSentence, ...prev.slice(0, 9)]); // 최대 10개 문장 유지
-        sentenceBuffer.current = [];
-      }
-    }
-  }, [currentWord, translatedSentences.length, isWebcamOn, isModelLoading]);
 
   // ✅ 4. 웹캠이 켜지면 API 서버 연결 확인
   useEffect(() => {
     if (isWebcamOn) {
       console.log('웹캠 켜짐 - API 서버 연결 확인 시작');
       setIsModelLoading(true);
-      checkAPIServer().then((isConnected) => {
-        console.log('API 서버 연결 결과:', isConnected);
-        if (isConnected) {
-          // API 서버 연결 성공 시 실시간 인식 시작
-          intervalRef.current = setInterval(processRecognition, 1000); // 1초마다 인식
-          console.log('실시간 인식 시작됨');
+      
+      // API 서버 연결 확인 (한 번만)
+      const connectToAPI = async () => {
+        try {
+          const isConnected = await checkAPIServer();
+          console.log('API 서버 연결 결과:', isConnected);
+          if (isConnected) {
+            // API 서버 연결 성공 시 실시간 인식 시작
+            intervalRef.current = setInterval(async () => {
+              if (!isWebcamOn || isModelLoading) return;
+              
+              const predictedWord = await predictSign();
+              
+              // 디버깅을 위한 로그 추가
+              console.log('예측된 단어:', predictedWord);
+              
+              // 예측된 단어가 이전과 다를 때만 상태 업데이트
+              if (predictedWord !== currentWord && predictedWord !== '인식 실패' && predictedWord !== '연결 오류' && predictedWord !== '카메라 없음') {
+                console.log('새로운 단어 인식됨:', predictedWord);
+                setCurrentWord(predictedWord);
+                sentenceBuffer.current.push(predictedWord);
+
+                // 단어가 3개 모이면 문장으로 만들어 로그에 추가
+                if (sentenceBuffer.current.length >= 3) {
+                  const newSentence = {
+                    id: Date.now(),
+                    title: `문장 ${translatedSentences.length + 1}`,
+                    text: sentenceBuffer.current.join(' '),
+                  };
+                  setTranslatedSentences(prev => [newSentence, ...prev.slice(0, 9)]); // 최대 10개 문장 유지
+                  sentenceBuffer.current = [];
+                }
+              }
+            }, 1000); // 1초마다 인식
+            console.log('실시간 인식 시작됨');
+          }
+          console.log('모델 로딩 상태 해제');
+          setIsModelLoading(false);
+        } catch (error) {
+          console.error('API 서버 연결 오류:', error);
+          setIsModelLoading(false);
         }
-        console.log('모델 로딩 상태 해제');
-        setIsModelLoading(false);
-      }).catch((error) => {
-        console.error('API 서버 연결 오류:', error);
-        setIsModelLoading(false);
-      });
+      };
+      
+      connectToAPI();
     } else {
       console.log('웹캠 꺼짐 - 인터벌 정리');
       // 웹캠이 꺼지면 인터벌 정리
@@ -133,7 +156,7 @@ const Translator = () => {
         intervalRef.current = null;
       }
     };
-  }, [isWebcamOn, checkAPIServer, processRecognition]);
+  }, [isWebcamOn]); // 의존성 배열에서 initializeMediaPipe 제거
 
   // ✅ 5. MediaPipe 제거 - API 서버만 사용
 
