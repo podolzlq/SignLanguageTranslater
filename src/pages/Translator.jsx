@@ -42,24 +42,43 @@ const Translator = () => {
     handsRef.current = hands;
   }, []);
 
-  // ✅ 2. AI 담당자가 채울 부분: 수어 좌표를 받아 단어를 예측하는 함수
-  const predictSign = (landmarks) => {
-    // 이 곳에서 AI 담당자가 만든 TensorFlow.js 또는 PyTorch 모델을 사용하여
-    // landmarks 데이터를 기반으로 단어를 예측(추론)하는 로직을 구현합니다.
-    // 예시: const prediction = customModel.predict(landmarks);
-    // 지금은 가상으로 단어를 반환합니다.
-    const mockWords = ['안녕하세요', '저는', '감사합니다', '손짓', '입니다'];
-    return mockWords[Math.floor(Math.random() * mockWords.length)];
+  // ✅ 2. API 서버를 통한 수어 인식 함수
+  const predictSign = async (landmarks) => {
+    try {
+      // 웹캠 이미지를 Base64로 변환
+      const canvas = document.createElement('canvas');
+      const video = webcamRef.current?.video;
+      if (!video) return '카메라 없음';
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // API 서버에 요청
+      const response = await fetch('http://localhost:5000/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image })
+      });
+      
+      const data = await response.json();
+      return data.success ? data.prediction : '인식 실패';
+    } catch (error) {
+      console.error('API 호출 오류:', error);
+      return '연결 오류';
+    }
   };
 
   // ✅ 3. MediaPipe가 결과를 반환할 때마다 호출되는 콜백
-  const onResults = useCallback((results) => {
+  const onResults = useCallback(async (results) => {
     if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
       const landmarks = results.multiHandLandmarks[0];
-      const predictedWord = predictSign(landmarks);
+      const predictedWord = await predictSign(landmarks);
       
       // 예측된 단어가 이전과 다를 때만 상태 업데이트
-      if (predictedWord !== currentWord) {
+      if (predictedWord !== currentWord && predictedWord !== '인식 실패' && predictedWord !== '연결 오류') {
         setCurrentWord(predictedWord);
         sentenceBuffer.current.push(predictedWord);
 
@@ -81,16 +100,25 @@ const Translator = () => {
   useEffect(() => {
     initializeMediaPipe();
     
-    // 이 곳에서 AI 담당자가 만든 커스텀 모델을 로드합니다.
-    const loadCustomModel = async () => {
+    // API 서버 연결 확인
+    const checkAPIServer = async () => {
       setIsModelLoading(true);
-      // 예시: await tf.loadLayersModel('/model/model.json');
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 로딩 시뮬레이션
+      try {
+        const response = await fetch('http://localhost:5000/api/health');
+        const data = await response.json();
+        if (data.status === 'healthy') {
+          console.log('API 서버 연결 성공!');
+        } else {
+          console.error('API 서버 상태 이상');
+        }
+      } catch (error) {
+        console.error('API 서버 연결 실패:', error);
+      }
       setIsModelLoading(false);
     };
 
     if (isWebcamOn) {
-      loadCustomModel();
+      checkAPIServer();
     }
   }, [isWebcamOn, initializeMediaPipe]);
 
