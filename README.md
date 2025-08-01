@@ -65,20 +65,33 @@ pip install opencv-python mediapipe tensorflow numpy flask flask-socketio
 
 ### 방법 1: 웹 인터페이스 (권장)
 
-1. **웹 서버 실행:**
+1. **프로젝트 루트로 이동:**
+```bash
+cd sign_language_model
+```
+
+2. **웹 서버 실행:**
 ```bash
 cd sing_lang_trans
 python web_app.py
 ```
 
-2. **브라우저에서 접속:**
+3. **브라우저에서 접속:**
    - 브라우저를 열고 `http://localhost:5000` 접속
    - "인식 시작" 버튼 클릭
    - 웹캠 권한 허용
    - 실시간 수어 인식 결과 확인
 
+**중요**: 반드시 `sign_language_model` 폴더에서 시작하여 `sing_lang_trans` 폴더로 이동한 후 실행해야 합니다.
+
 ### 방법 2: 콘솔 기반 테스트
 
+1. **프로젝트 루트로 이동:**
+```bash
+cd sign_language_model
+```
+
+2. **테스트 실행:**
 ```bash
 cd sing_lang_trans
 python simple_test.py
@@ -86,6 +99,8 @@ python simple_test.py
 
 - ESC 키를 눌러 종료
 - 터미널에서 예측 결과 확인
+
+**중요**: 반드시 `sign_language_model` 폴더에서 시작하여 `sing_lang_trans` 폴더로 이동한 후 실행해야 합니다.
 
 ## 📖 사용법
 
@@ -131,7 +146,13 @@ python simple_test.py
 # models 폴더가 있는지 확인
 ls models/
 # multi_hand_gesture_classifier.tflite 파일이 있는지 확인
+ls models/multi_hand_gesture_classifier.tflite
 ```
+
+**해결 방법:**
+- 프로젝트 루트 디렉토리에서 실행하고 있는지 확인
+- `models/` 폴더에 `multi_hand_gesture_classifier.tflite` 파일이 있는지 확인
+- 파일이 없다면 저장소를 다시 클론하거나 모델 파일을 다운로드
 
 ### 3. 패키지 설치 오류
 ```bash
@@ -153,6 +174,20 @@ pip install opencv-python mediapipe tensorflow numpy flask flask-socketio
 # web_app.py 파일에서 포트 변경
 socketio.run(app, host='0.0.0.0', port=5001, debug=True)
 ```
+
+### 5. 서버와 모델 연동 문제
+- **증상**: 웹 서버는 실행되지만 수어 인식이 작동하지 않음
+- **원인**: 모델 파일 경로 문제 또는 초기화 실패
+- **해결 방법**:
+  1. 터미널에서 오류 메시지 확인
+  2. `models/` 폴더에 모델 파일이 있는지 확인
+  3. 올바른 디렉토리에서 실행하고 있는지 확인:
+     ```bash
+     # 올바른 실행 방법
+     cd sign_language_model
+     cd sing_lang_trans
+     python web_app.py
+     ```
 
 ## 📝 요구사항
 

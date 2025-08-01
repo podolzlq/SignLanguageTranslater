@@ -13,10 +13,26 @@ seq_length = 10
 
 def initialize_detector_and_model():
     """MediaPipe 홀리스틱 모델과 TFLite 모델 초기화"""
-    detector = hm.HolisticDetector(min_detection_confidence=0.3)
-    interpreter = tf.lite.Interpreter(model_path="../models/multi_hand_gesture_classifier.tflite")
-    interpreter.allocate_tensors()
-    return detector, interpreter
+    # 모델 경로 설정 (절대 경로 사용)
+    import os
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_dir, "..", "models", "multi_hand_gesture_classifier.tflite")
+    
+    # 모델 파일 존재 확인
+    if not os.path.exists(model_path):
+        print(f"모델 파일을 찾을 수 없습니다: {model_path}")
+        print("models 폴더에 multi_hand_gesture_classifier.tflite 파일이 있는지 확인해주세요.")
+        return None, None
+    
+    try:
+        detector = hm.HolisticDetector(min_detection_confidence=0.3)
+        interpreter = tf.lite.Interpreter(model_path=model_path)
+        interpreter.allocate_tensors()
+        print("모델 초기화 완료!")
+        return detector, interpreter
+    except Exception as e:
+        print(f"모델 초기화 중 오류 발생: {e}")
+        return None, None
 
 def process_hand_landmarks(right_hand_lmList):
     """손 랜드마크 처리 및 벡터 정규화"""
@@ -49,6 +65,9 @@ def main():
     }
     
     detector, interpreter = initialize_detector_and_model()
+    if detector is None or interpreter is None:
+        print("모델 초기화에 실패했습니다. 프로그램을 종료합니다.")
+        return
     print("모델 로딩 완료!")
     
     cap = cv2.VideoCapture(0)
