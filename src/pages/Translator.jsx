@@ -1,109 +1,176 @@
+// npm install --save-dev copyfiles
+// npm install @mediapipe/holistic @mediapipe/camera_utils onnxruntime-web react-webcam
+// npm install
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import Webcam from 'react-webcam'; // ✅ react-webcam 임포트
-import { Hands } from '@mediapipe/hands'; // ✅ MediaPipe 임포트
+import Webcam from 'react-webcam';
+import { Holistic } from '@mediapipe/holistic';
+import { Camera } from '@mediapipe/camera_utils';
+import { InferenceSession, Tensor } from 'onnxruntime-web';
 import Header from '../components/Header/Header';
 import { IoClose } from 'react-icons/io5';
 import './Translator.css';
 
+// 클래스 레이블
+const CLASS_LABELS = [
+  '가래떡', '감기', '검사', '결승전', '고깃국', '고민', '고추', '고추가루', '급하다', '꽈배기',
+  '꽈베기', '꿀물', '나사렛대학교', '낚시대', '낚시터', '남아', '냄비', '눈', '뉴질랜드', '다과',
+  '당뇨병', '독서', '독신', '돼지고기', '된장찌개', '된장찌게', '두부', '딸기', '떡국', '라면',
+  '막걸리', '매표소', '면역', '무', '발가락', '밥그릇', '밥솥', '방충', '배드민턴', '배추국',
+  '배춧국', '벌꿀', '변비', '병명', '병문안', '보건소', '보신탕', '부엌', '불면증', '불행',
+  '붕대', '비빔밥', '빈혈', '뻔뻔', '사골', '사과', '사위', '사이다', '설사', '성병',
+  '성실', '소불고기', '소화제', '손녀', '손자', '수면제', '수어', '수집가', '슬프다', '신사',
+  '싫어하다', '안타깝다', '알아서', '어색하다', '여아', '여행지', '열아홉번째', '영아', '예식장', '올림픽경기',
+  '외국인', '운동경기', '음료수', '입원', '자극', '장애인', '재혼', '지방경찰청장', '진단서', '찬물',
+  '첫번째', '축구장', '치료', '치료법', '친아들', '침착', '퇴원', '필기시험', '학교연혁', '한약',
+  '한약방', '화상', '회복'
+];
+
+const POSE_INDICES = Array.from(Array(25).keys());
+const FACE_INDICES = Array.from(Array(70).keys());
+const HAND_INDICES = Array.from(Array(21).keys());
+
 const Translator = () => {
   const [isWebcamOn, setIsWebcamOn] = useState(false);
-  const [isModelLoading, setIsModelLoading] = useState(false); // ✅ 모델 로딩 상태
+  const [isModelLoading, setIsModelLoading] = useState(true);
   const [currentWord, setCurrentWord] = useState('');
   const [translatedSentences, setTranslatedSentences] = useState([]);
-  
+  const [session, setSession] = useState(null);
+
   const webcamRef = useRef(null);
-  const handsRef = useRef(null);
-  const sentenceBuffer = useRef([]); // 단어들을 임시 저장할 버퍼
-  
-  useEffect(() => {
-    // Translator 페이지가 마운트될 때 body 배경을 그라데이션으로 설정
-    document.body.style.background = 'linear-gradient(180deg, #FFBCB7 0%, #DDA9D9 100%)';
+  const holisticRef = useRef(null);
+  const cameraRef = useRef(null);
+  const sentenceBuffer = useRef([]);
+  const sequenceBuffer = useRef([]);
+  const lastPredictedWord = useRef(null);
 
-    // 컴포넌트가 언마운트(사라질 때)될 때 실행될 클린업 함수
-    return () => {
-      // 다른 페이지에 영향을 주지 않도록 body 배경을 원래대로 복구
-      document.body.style.background = ''; 
-    };
-  }, []); // []를 비워두면 컴포넌트가 처음 마운트될 때 딱 한 번만 실행됩니다.
-
-  // ✅ 1. MediaPipe Hands 모델 초기화 함수
-  const initializeMediaPipe = useCallback(() => {
-    const hands = new Hands({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
-    });
-    hands.setOptions({
-      maxNumHands: 1,
-      modelComplexity: 1,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5,
-    });
-    // 결과 콜백 함수
-    hands.onResults(onResults);
-    handsRef.current = hands;
+  const normalizeSkeleton = useCallback((landmarks) => {
+    if (!landmarks || landmarks.length !== 411) return null;
+    const keypoints2d = [];
+    for (let i = 0; i < landmarks.length; i += 3) {
+      keypoints2d.push([landmarks[i], landmarks[i+1], landmarks[i+2]]);
+    }
+    const neckPoint = keypoints2d[1];
+    if (neckPoint[0] === 0 && neckPoint[1] === 0) return new Array(landmarks.length).fill(0);
+    let relativeKeypoints = keypoints2d.map(p => [p[0] - neckPoint[0], p[1] - neckPoint[1]]);
+    const leftShoulder = keypoints2d[5];
+    const rightShoulder = keypoints2d[2];
+    if (leftShoulder.every(p => p !== 0) && rightShoulder.every(p => p !== 0)) {
+      const shoulderDist = Math.sqrt(Math.pow(leftShoulder[0] - rightShoulder[0], 2) + Math.pow(leftShoulder[1] - rightShoulder[1], 2));
+      if (shoulderDist > 1e-4) {
+        relativeKeypoints = relativeKeypoints.map(p => [p[0] / shoulderDist, p[1] / shoulderDist]);
+      }
+    }
+    const normalizedFrame = relativeKeypoints.map((p, i) => [...p, keypoints2d[i][2]]);
+    return normalizedFrame.flat();
   }, []);
 
-  // ✅ 2. AI 담당자가 채울 부분: 수어 좌표를 받아 단어를 예측하는 함수
-  const predictSign = (landmarks) => {
-    // 이 곳에서 AI 담당자가 만든 TensorFlow.js 또는 PyTorch 모델을 사용하여
-    // landmarks 데이터를 기반으로 단어를 예측(추론)하는 로직을 구현합니다.
-    // 예시: const prediction = customModel.predict(landmarks);
-    // 지금은 가상으로 단어를 반환합니다.
-    const mockWords = ['안녕하세요', '저는', '감사합니다', '손짓', '입니다'];
-    return mockWords[Math.floor(Math.random() * mockWords.length)];
-  };
+  const predictSign = useCallback(async (landmarks) => {
+    if (!session || !landmarks) return;
+    const normalizedLandmarks = normalizeSkeleton(landmarks);
+    if (!normalizedLandmarks) return;
+    sequenceBuffer.current.push(normalizedLandmarks);
+    if (sequenceBuffer.current.length > 150) {
+      sequenceBuffer.current.shift();
+    } else if (sequenceBuffer.current.length < 150) {
+      return;
+    }
+    try {
+      const inputTensor = new Tensor('float32', Float32Array.from(sequenceBuffer.current.flat()), [1, 150, 411]);
+      const feeds = { 'input': inputTensor };
+      const results = await session.run(feeds);
+      const outputTensor = results.output;
+      const prediction = Array.from(outputTensor.data);
+      const maxProb = Math.max(...prediction);
+      const maxIndex = prediction.indexOf(maxProb);
+      return CLASS_LABELS[maxIndex];
+    } catch (error) {
+      console.error("Model prediction failed:", error);
+    }
+  }, [session, normalizeSkeleton]);
 
-  // ✅ 3. MediaPipe가 결과를 반환할 때마다 호출되는 콜백
-  const onResults = useCallback((results) => {
-    if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-      const landmarks = results.multiHandLandmarks[0];
-      const predictedWord = predictSign(landmarks);
-      
-      // 예측된 단어가 이전과 다를 때만 상태 업데이트
-      if (predictedWord !== currentWord) {
+  const onResults = useCallback(async (results) => {
+    let combinedLandmarks = [];
+    const pose = results.poseLandmarks || [];
+    POSE_INDICES.forEach(i => { const lm = pose[i]; combinedLandmarks.push(lm ? lm.x : 0, lm ? lm.y : 0, lm ? lm.z : 0); });
+    const face = results.faceLandmarks || [];
+    FACE_INDICES.forEach(i => { const lm = face[i]; combinedLandmarks.push(lm ? lm.x : 0, lm ? lm.y : 0, lm ? lm.z : 0); });
+    const leftHand = results.leftHandLandmarks || [];
+    HAND_INDICES.forEach(i => { const lm = leftHand[i]; combinedLandmarks.push(lm ? lm.x : 0, lm ? lm.y : 0, lm ? lm.z : 0); });
+    const rightHand = results.rightHandLandmarks || [];
+    HAND_INDICES.forEach(i => { const lm = rightHand[i]; combinedLandmarks.push(lm ? lm.x : 0, lm ? lm.y : 0, lm ? lm.z : 0); });
+
+    if (combinedLandmarks.length === 411) {
+      const predictedWord = await predictSign(combinedLandmarks);
+      if (predictedWord && predictedWord !== lastPredictedWord.current) {
+        lastPredictedWord.current = predictedWord;
         setCurrentWord(predictedWord);
-        sentenceBuffer.current.push(predictedWord);
-
-        // 단어가 3개 모이면 문장으로 만들어 로그에 추가
+        if (!sentenceBuffer.current.includes(predictedWord)) {
+            sentenceBuffer.current.push(predictedWord);
+        }
         if (sentenceBuffer.current.length >= 3) {
-          const newSentence = {
-            id: Date.now(),
-            title: `문장 ${translatedSentences.length + 1}`,
-            text: sentenceBuffer.current.join(' '),
-          };
-          setTranslatedSentences(prev => [newSentence, ...prev.slice(0, 9)]); // 최대 10개 문장 유지
+          const newSentence = { id: Date.now(), title: `문단 ${translatedSentences.length + 1}`, text: sentenceBuffer.current.join(' ') };
+          setTranslatedSentences(prev => [newSentence, ...prev.slice(0, 9)]);
           sentenceBuffer.current = [];
         }
       }
     }
-  }, [currentWord, translatedSentences.length]);
+  }, [predictSign, translatedSentences.length]);
 
-  // ✅ 4. 웹캠이 켜지면 MediaPipe와 AI 모델을 로드하는 로직
   useEffect(() => {
-    initializeMediaPipe();
-    
-    // 이 곳에서 AI 담당자가 만든 커스텀 모델을 로드합니다.
-    const loadCustomModel = async () => {
-      setIsModelLoading(true);
-      // 예시: await tf.loadLayersModel('/model/model.json');
-      await new Promise(resolve => setTimeout(resolve, 1500)); // 로딩 시뮬레이션
-      setIsModelLoading(false);
-    };
+    // MediaPipe와 ONNX 모델을 컴포넌트가 마운트될 때 한 번만 초기화합니다.
+    holisticRef.current = new Holistic({
+      locateFile: (file) => `/${file}`,
+    });
+    holisticRef.current.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+    holisticRef.current.onResults(onResults);
 
-    if (isWebcamOn) {
-      loadCustomModel();
+    const loadModel = async () => {
+        try {
+            const modelPath = '/sign_language_model.onnx';
+            const newSession = await InferenceSession.create(modelPath);
+            setSession(newSession);
+            console.log("ONNX model loaded successfully.");
+        } catch (error) {
+            console.error("Failed to load the ONNX model:", error);
+        }
+        setIsModelLoading(false);
+    };
+    loadModel();
+  }, [onResults]);
+
+  useEffect(() => {
+    // isWebcamOn 상태가 변경될 때마다 카메라를 켜거나 끕니다.
+    if (isWebcamOn && !isModelLoading && session && webcamRef.current?.video) {
+      const videoElement = webcamRef.current.video;
+      cameraRef.current = new Camera(videoElement, {
+        onFrame: async () => {
+          if (videoElement) {
+            await holisticRef.current.send({ image: videoElement });
+          }
+        },
+        width: 640,
+        height: 480,
+      });
+      cameraRef.current.start();
     }
-  }, [isWebcamOn, initializeMediaPipe]);
 
-  // ✅ 5. 실시간 비디오 프레임을 MediaPipe로 보내는 루프
-  useEffect(() => {
-    const processVideo = async () => {
-      if (isWebcamOn && webcamRef.current?.video && !isModelLoading) {
-        await handsRef.current?.send({ image: webcamRef.current.video });
+    return () => {
+      if (cameraRef.current) {
+        cameraRef.current.stop();
       }
-      requestAnimationFrame(processVideo);
     };
-    processVideo();
-  }, [isWebcamOn, isModelLoading]);
+  }, [isWebcamOn, isModelLoading, session]);
+
+  useEffect(() => {
+    document.body.style.background = 'linear-gradient(180deg, #FFBCB7 0%, #DDA9D9 100%)';
+    return () => { document.body.style.background = ''; };
+  }, []);
 
   return (
     <div className="translator-container">
@@ -125,7 +192,8 @@ const Translator = () => {
                 ref={webcamRef}
                 screenshotFormat="image/jpeg"
                 className="webcam-video"
-                hidden={!isWebcamOn} // 웹캠이 꺼져있을 땐 숨김
+                mirrored={true}
+                hidden={!isWebcamOn}
               />
               {isModelLoading && <div className="loading-overlay">AI 모델을 불러오는 중...</div>}
               {!isWebcamOn && (
@@ -135,19 +203,19 @@ const Translator = () => {
               )}
             </div>
           </div>
-          
+
           <div className="grid-item translated-card">
-            <h3>번역된 문장</h3>
+            <h3>번역된 문단</h3>
             <div className="translated-list">
-              {translatedSentences.map(sentence => (
+              {translatedSentences.map((sentence, index) => (
                 <div key={sentence.id} className="translated-item">
-                  <div className="item-header"><span>{sentence.title}</span><button className="close-btn"><IoClose /></button></div>
+                  <div className="item-header"><span>{`문단 ${translatedSentences.length - index}`}</span><button className="close-btn" onClick={() => setTranslatedSentences(prev => prev.filter(s => s.id !== sentence.id))}><IoClose /></button></div>
                   <p>{sentence.text}</p>
                 </div>
               ))}
             </div>
           </div>
-          
+
           <div className="grid-item recognized-card">
             <h3>현재 인식된 단어</h3>
             <div className="recognized-content">
@@ -155,13 +223,13 @@ const Translator = () => {
               <p>{isWebcamOn ? (currentWord ? '단어가 인식되었습니다' : '인식 대기 중...') : ''}</p>
             </div>
           </div>
-          
+
           <div className="grid-item tips-card">
             <h3>사용 팁</h3>
             <ul>
               <li>카메라와 1-2미터 거리를 유지해주세요.</li>
               <li>충분한 조명이 있는 곳에서 사용해주세요.</li>
-              <li>손과 팔이 화면에 잘 보이도록 찍주세요.</li>
+              <li>손과 팔이 화면에 잘 보이도록 찍어주세요.</li>
               <li>천천히 수어해주세요.</li>
             </ul>
           </div>
